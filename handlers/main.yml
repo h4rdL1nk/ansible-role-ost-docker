@@ -1,0 +1,14 @@
+---
+
+- name: iptables_save
+  command: /usr/libexec/iptables/iptables.init save
+
+- name: reload_daemons
+  systemd: 
+    daemon_reload: yes
+
+- name: restart_docker_storage
+  service: name=docker-storage-setup state=restarted
+
+- name: restart_docker
+  service: name=docker state=restarted

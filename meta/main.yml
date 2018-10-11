@@ -1,0 +1,13 @@
+---
+galaxy_info:
+  author: Fernando Gonzalez <fernando.gonzalezlara.ext@telefonica.com>
+  description: Ansible role
+  company: TID.
+  platforms:
+    - name: RedHat
+      versions:
+        - 6
+        - 7
+dependencies: []
+  
+

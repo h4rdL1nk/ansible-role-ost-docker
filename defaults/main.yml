@@ -1,0 +1,147 @@
+---
+# .. vim: foldmarker=[[[,]]]:foldmethod=marker
+
+# Default variables
+# =================
+
+# .. contents:: Sections
+#    :local:
+#
+# Configuration
+# -------------
+# .. envvar:: smd_docker_storage_device [[[
+#
+#    Drive where docker thin LVM will be created
+#
+smd_docker_storage_device: /dev/vdb
+#
+# ]]]
+# .. envvar:: smd_docker_vg_size [[[
+#
+#    Size on the thin volume
+#
+smd_docker_vg_size: 100%
+#
+# ]]]
+# .. envvar:: smd_docker_bind_network [[[
+#
+#    Network where docker daemon will listen 
+#
+smd_docker_bind_network: DEFAULT
+#
+# ]]]
+# .. envvar:: smd_docker_bind_port [[[
+#
+#    Port where docker daemon will listen
+#
+smd_docker_bind_port: 2376
+#
+# ]]]
+# .. envvar:: smd_docker_proxy [[[
+#
+#    Proxy to connect to artifactory
+#
+smd_docker_proxy: http://prod-epg-ost-proxy-01.hi.inet:6666
+#
+# .. envvar:: smd_docker_proxy [[[
+#
+#    Exceptions to not use defined proxy
+#
+smd_docker_proxy_exceptions: 
+  - .docker.io
+  - .docker.com
+  - .cloudfront.net
+#
+# ]]]
+# .. envvar:: smd_docker_options [[[
+#
+#    Docker daemon options
+#
+smd_docker_options:
+  bip: 192.168.200.1/24
+  userland_proxy: false
+  registries:
+    - artifactory.hi.inet
+#
+# ]]]
+# .. envvar:: smd_docker_version [[[
+#
+#    Docker version to install
+#
+smd_docker_version: 18.03.1
+#
+# ]]]
+# .. envvar:: smd_docker_rpm_package [[[
+#
+#    Docker RPM package for community edition
+#
+smd_docker_rpm_package: http://artifactory.hi.inet/artifactory/yum-jsm-release/docker-ce-{{ smd_docker_version }}.ce-1.el7.centos.x86_64.rpm
+#
+# ]]]
+# .. envvar:: smd_docker_packages [[[
+#
+#    Docker packages to install
+#
+smd_docker_packages:
+  - lvm2
+  - libtool-ltdl
+  - pigz
+  - runc
+  #- /tmp/docker-ce.rpm
+  #- "{{smd_docker_rpm_package}}"
+  - python-docker-py
+#
+# ]]]
+# .. envvar:: smd_docker_daemon_config [[[
+#
+#    Docker daemon config ( YAML version of daemon.json )
+#
+smd_docker_daemon_config:
+  mtu: 1400
+  hosts: [
+    "tcp://{% if hostvars[inventory_hostname]['networks'] is defined %}{{hostvars[inventory_hostname]['networks'][smd_docker_bind_network][iptype]}}{% else %}{{hostvars[inventory_hostname][smd_docker_bind_network]}}{% endif %}:{{smd_docker_bind_port}}",
+    "unix:///var/run/docker.sock"
+  ]
+  exec-opts:
+    - native.cgroupdriver=systemd
+  bip: "{% if smd_docker_options.bip is defined %}{{smd_docker_options.bip}}{% endif %}"
+  userland-proxy: false
+  userland-proxy-path: "/usr/libexec/docker/docker-proxy-current"
+  storage-driver: devicemapper
+  storage-opts:
+    - dm.use_deferred_removal=true
+    - dm.use_deferred_deletion=true
+    - dm.directlvm_device={{ smd_docker_storage_device }}
+    - dm.thinp_percent=95
+    - dm.thinp_metapercent=1
+    - dm.thinp_autoextend_threshold=80
+    - dm.thinp_autoextend_percent=20
+    - dm.directlvm_device_force=true
+  live-restore: true
+  default-runtime: rhel-runtime
+  runtimes:
+    rhel-runtime:
+      path: /usr/bin/runc
+#
+# ]]]
+# .. envvar:: smd_docker_daemon_auths [[[
+#
+#    Docker auth config ( YAML version of ~/.docker/config.json )
+#
+smd_docker_daemon_auths:
+  auths:
+    dockerhub.hi.inet:
+      auth: amV0c2VtZS1qZW5raW5zLW9zdDppdGFwb3dlcjAz
+      email: jetsetme_dev@tid.es
+    registry.smartdigits.io:
+      auth: ZGV2b3BzOldIcjdPc29uQTR6NmNK
+      email: smartdigits_support@telefonica.com
+#
+# ]]]
+# .. envvar:: smd_docker_lvm_config [[[
+#
+#    Configure LVM VG for devicemapper
+#
+smd_docker_lvm_config: true
+#
+# ]]]

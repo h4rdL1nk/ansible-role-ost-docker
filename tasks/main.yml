@@ -1,0 +1,71 @@
+---
+
+- name: Install docker-ce packages
+  yum:
+    name: "{{smd_docker_rpm_package}}"
+    state: present
+  environment:
+    http_proxy: "{{smd_docker_proxy}}"
+    https_proxy: "{{smd_docker_proxy}}"
+
+- name: Install docker packages
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{smd_docker_packages}}"
+
+- name: Enable services
+  service:
+    name: "{{item}}"
+    enabled: yes
+  with_items:
+    - docker
+
+- name: Create docker VG
+  lvg: 
+    vg: vg_docker 
+    pvs: "{{smd_docker_storage_device}}"
+  when: smd_docker_lvm_config | bool
+
+- name: Ensure docker config dirs exists
+  file:
+    path: "{{item}}"
+    state: directory
+  with_items:
+    - /etc/docker
+    - /etc/systemd/system/docker.service.d
+    - ~/.docker
+
+- name: Configure docker http_proxy
+  template:
+    src: docker-http-proxy.j2
+    dest: /etc/systemd/system/docker.service.d/http-proxy.conf
+  notify: reload_daemons
+  when: smd_docker_proxy is defined
+
+- name: Config docker hairpin rule
+  iptables:
+    state: present
+    action: append
+    comment: Docker proxy hairpin rule
+    table: nat
+    chain: POSTROUTING
+    source: "{{ smd_docker_options.bip }}"
+    destination: "{{ smd_docker_options.bip }}" 
+    protocol: tcp
+    jump: MASQUERADE
+  notify: iptables_save
+
+- name: Config docker daemon
+  copy:
+    dest: /etc/docker/daemon.json
+    content: "{{ smd_docker_daemon_config | to_nice_json }}"
+  notify: restart_docker
+
+- name: Configure docker login
+  copy: 
+    dest: ~/.docker/config.json 
+    mode: 0600
+    content: "{{ smd_docker_daemon_auths | to_nice_json }}"
+
+- meta: flush_handlers

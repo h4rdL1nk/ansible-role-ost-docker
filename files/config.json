@@ -1,0 +1,8 @@
+{
+        "auths": {
+                "dockerhub.hi.inet": {
+                        "auth": "amV0c2VtZS1qZW5raW5zLW9zdDppdGFwb3dlcjAz",
+                        "email": "jetsetme_dev@tid.es"
+                }
+        }
+}

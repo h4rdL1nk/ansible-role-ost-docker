@@ -1,0 +1,3 @@
+[Service]
+Environment="HTTP_PROXY={{smd_docker_proxy}}"
+{% if smd_docker_proxy_exceptions is defined and smd_docker_proxy_exceptions is iterable %}Environment="NO_PROXY={{smd_docker_proxy_exceptions | join(',')}}"{% endif %}
